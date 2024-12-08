@@ -39,7 +39,6 @@ Run the game:
    ```
 
 ---
-
 #### **Gameplay Instructions**
 1. Launch the game using `run.py` or `run_ai.py` for ai game..
 2. Use the mouse to click and place pieces:
@@ -48,17 +47,17 @@ Run the game:
    - **Measure**: Activate measure mode using the "Measure" button and click on a quantum piece to collapse it.
 3. The game alternates turns between two players or a player and the AI.
 4. To restart the game, click the "Restart" button.
-
 ---
 
 #### **Quantum Mechanics in Gameplay**
 - **Quantum Superposition**: Pieces in superposition exist simultaneously in two locations.
-- **Overlap**: Opposite quantum pieces at the same position create a "grey" quantum piece that cannot overlap further.
+- **Quantum Entanglement**: Opposite quantum pieces at the same position create a "grey" quantum piece that cannot overlap further.
 - **Measurement**: Measuring a quantum piece collapses its state, finalizing its position.
 
 ---
 
 #### **AI Strategy**
+Huge thanks to https://github.com/linhusp/gomoku-alphabeta for inspiration about AI stucture
 The AI uses a combination of:
 - **Minimax Algorithm**: Evaluates possible moves and selects the optimal path.
 - **Alpha-Beta Pruning**: Reduces computation by eliminating non-promising moves.
