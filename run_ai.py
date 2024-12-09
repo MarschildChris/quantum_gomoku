@@ -291,32 +291,32 @@ def ai_turn():
         return
 
 
-# Check for a winner (this is a basic check for simplicity)
 def check_winner(x, y):
-    directions = [(1, 0), (0, 1), (1, 1), (1, -1)]  # Check horizontal, vertical, diagonal
-    player = 1 if Turn == "black" else 2
+    """
+    Uses the GameRunner's get_status method to determine if there is a winner.
 
-    for dx, dy in directions:
-        count = 1
-        # Check in both positive and negative directions
-        for i in range(1, 5):
-            nx, ny = x + dx * i, y + dy * i
-            if 0 <= nx < Board_Size and 0 <= ny < Board_Size and board[ny][nx] == player:
-                count += 1
-            else:
-                break
+    :param x: x-coordinate of the last move.
+    :param y: y-coordinate of the last move.
+    :return: True if a winner exists or the game is a draw, otherwise False.
+    """
+    global Winner
 
-        for i in range(1, 5):
-            nx, ny = x - dx * i, y - dy * i
-            if 0 <= nx < Board_Size and 0 <= ny < Board_Size and board[ny][nx] == player:
-                count += 1
-            else:
-                break
+    # Fetch the current game status
+    status = ai_game.get_status()
 
-        if count >= 5:
-            return True
+    # Check if the game is finished and assign the winner if applicable
+    if status['finished']:
+        winner = status['winner']
+        if winner == BLACK:
+            Winner = "black"
+        elif winner == WHITE:
+            Winner = "white"
+        else:
+            Winner = "draw"
+        return True
 
     return False
+
 
 # Restart the game
 def restart_game():
@@ -339,6 +339,30 @@ restart_button.place(x=width / 2 * 0.5 - 80, y=height + Frame_Gap-50, height=Che
 
 quantum_button = Button(myInterface, text="Quantum", font="Helvetica 14", command=handle_quantum_move)
 quantum_button.place(x=width / 2 * 0.5 + 20, y=height + Frame_Gap-50, height=Chess_Radius * 2, width=Chess_Radius * 7)
+
+def print_board_state():
+    print("\nBoard State:")
+    for y in range(Board_Size):
+        row = []
+        for x in range(Board_Size):
+            piece = board[y][x]
+            if piece == 0:
+                row.append(".")  # Empty space
+            elif piece == 1:
+                row.append("X")  # Black classic piece
+            elif piece == 2:
+                row.append("B")  # Black quantum piece
+            elif piece == -1:
+                row.append("O")  # White classic piece
+            elif piece == -2:
+                row.append("W")  # White quantum piece
+            elif piece == 3:
+                row.append("Q")  # Grey quantum piece
+            else:
+                row.append("?")  # Unknown state (for safety)
+        print(" ".join(row))
+    print("\n")
+
 
 import random  # Import random for random selection
 def collapse_quantum_piece(y, x):
