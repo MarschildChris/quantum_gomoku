@@ -106,14 +106,24 @@ def MouseClick(event):
 
     if Winner != None:
         return
+
+    print("white quantum pieces:", white_quantum_pieces)
+    print("black quantum pieces:", black_quantum_pieces)
+
     if is_measure_mode:
         # Check if clicked spot is a quantum piece
         print((Y,X),"Y,X")
         print(quantum_pieces)
         if (Y, X) in quantum_pieces:
+            print("black quantum pieces before", black_quantum_pieces)
+            print("white quantum pieces before", white_quantum_pieces)
             collapse_quantum_piece(Y, X)
             is_measure_mode = False  # Exit measure mode after collapsing a piece
             hide_cancel_button()  # Automatically hide the Cancel button
+            if check_winner():
+                Winner = Turn
+                s.create_text(width / 2, height / 2, text=f"{Turn.upper()} WINS!", font="Helvetica 20 bold", fill="red")
+                return
 
         else:
             print("No quantum piece selected. Try again.")
@@ -178,7 +188,7 @@ def MouseClick(event):
             ai_game.play(Y, X)  # Update the GameRunner state with the player's move
 
             # Check for winner
-            if check_winner(X, Y):
+            if check_winner():
                 Winner = Turn
                 s.create_text(width / 2, height / 2, text=f"{Turn.upper()} WINS!", font="Helvetica 20 bold", fill="red")
                 return
@@ -189,10 +199,6 @@ def MouseClick(event):
 
             # Let the AI play its turn
             ai_turn()
-    if check_winner(X, Y):
-        Winner = Turn
-        s.create_text(width / 2, height / 2, text=f"{Turn.upper()} WINS!", font="Helvetica 20 bold", fill="red")
-        return
 
 
 # Dictionary to store piece references by their location
@@ -220,7 +226,6 @@ def create_piece(x, y, color):
 def delete_piece(x, y):
     global pieces
 
-    print("pieces:",pieces)
     # Check if there is a piece at the given location
     if (x, y) in pieces:
         # Delete the canvas item
@@ -229,6 +234,8 @@ def delete_piece(x, y):
         del pieces[(x, y)]
     else:
         print(f"No piece found at ({x}, {y}) to delete.")
+
+
 
 
 def create_quantum_piece(x, y, color):
@@ -253,13 +260,9 @@ def create_quantum_piece(x, y, color):
 
 
 
-
-
-
-
 # Let the AI make its move
 def ai_turn():
-    global Turn_Num, Turn, Winner
+    global Turn_Num, Turn, Winner, white_quantum_pieces
     ai_played, move = ai_game.aiplay()
     if ai_played:
         if isinstance(move, list) and len(move) == 2:  # Check if AI played a quantum move
@@ -268,30 +271,27 @@ def ai_turn():
                 create_quantum_piece(X, Y, color)
                 board[Y][X] = 2 if Turn == "black" else -2  # Update board with quantum piece marker
                 quantum_pieces.append((Y, X))  # Track quantum pieces for potential collapse
+                white_quantum_pieces.append((Y, X))
             print(f"AI placed quantum pieces at {move[0]} and {move[1]}")
         else:
             Y, X = move  # Normal move
             color = "black" if Turn == "black" else "white"
             create_piece(X, Y, color)
-            board[Y][X] = 1 if Turn == "black" else 2  # Update board with classic piece
+            board[Y][X] = 1 if Turn == "black" else -1  # Update board with classic piece
             print(f"AI played at {move}")
 
         # Check for winner
-        if check_winner(X, Y):
+        if check_winner():
             Winner = Turn
             s.create_text(width / 2, height / 2, text=f"{Turn.upper()} WINS!", font="Helvetica 20 bold", fill="red")
             return
 
         # Switch turns
-        Turn = "white" if Turn == "black" else "black"
-        Turn_Num += 1
-    if check_winner(X, Y):
-        Winner = Turn
-        s.create_text(width / 2, height / 2, text=f"{Turn.upper()} WINS!", font="Helvetica 20 bold", fill="red")
-        return
+    Turn = "white" if Turn == "black" else "black"
+    Turn_Num += 1
 
 
-def check_winner(x, y):
+def check_winner():
     """
     Uses the GameRunner's get_status method to determine if there is a winner.
 
@@ -320,7 +320,7 @@ def check_winner(x, y):
 
 # Restart the game
 def restart_game():
-    global Turn_Num, Turn, Winner, board, ai_game, pieces, quantum_pieces
+    global Turn_Num, Turn, Winner, board, ai_game, pieces, quantum_pieces, white_quantum_pieces, black_quantum_pieces
     Turn_Num = 1
     Turn = "black"
     Winner = None
@@ -328,6 +328,8 @@ def restart_game():
     ai_game.restart()  # Reset the AI game state
     pieces = {}
     quantum_pieces=[]
+    white_quantum_pieces=[]
+    black_quantum_pieces=[]
 
     # Clear the board canvas
     s.delete("all")
@@ -365,51 +367,85 @@ def print_board_state():
 
 
 import random  # Import random for random selection
-def collapse_quantum_piece(y, x):
-    global quantum_pieces, board, Turn, Turn_Num
+def collapse_quantum_piece(y, x, is_determined=False, advance_turn=True):
+    """
+    Resolves quantum pieces at the given position (y, x) by collapsing them into classical pieces
+    or clearing them based on random choice or deterministic outcome.
+    """
+    global board, white_quantum_pieces, black_quantum_pieces, Turn, Turn_Num, Winner
 
-    # Find the index of the selected quantum piece in quantum_pieces
-    index = quantum_pieces.index((y, x))
-    if index % 2 != 0:  # Ensure we are always working with the starting piece of a pair
-        index -= 1
-
-    # Get the pair of quantum pieces
-    position1 = quantum_pieces[index]
-    position2 = quantum_pieces[index + 1]
-
-    # Determine the color of the quantum pieces
-    if board[position1[0]][position1[1]] == 2:  # Check for black quantum piece
-        classic_color = 1  # Black classic piece
+    # Determine the quantum list and piece color
+    if (y, x) in black_quantum_pieces:
+        quantum_list = black_quantum_pieces
         piece_color = "black"
-    elif board[position1[0]][position1[1]] == -2:  # Check for white quantum piece
-        classic_color = -1  # White classic piece
+        classic_color = 1  # Black classic piece on the board
+    elif (y, x) in white_quantum_pieces:
+        quantum_list = white_quantum_pieces
         piece_color = "white"
+        classic_color = -1  # White classic piece on the board
     else:
-        print("Error: Invalid quantum piece detected.")
+        print(f"Error: No quantum piece found at ({y}, {x}).")
         return
 
-    # Randomly choose one to become a classic piece and the other to become empty
-    classic_position, empty_position = random.sample([position1, position2], 2)
+    # Find the pair of the quantum piece
+    index = quantum_list.index((y, x))
+    if index % 2 != 0:
+        index -= 1  # Ensure the first piece in the pair is selected
 
-    # Remove the visual representation of both quantum pieces
-    delete_piece(position1[1], position1[0])
-    delete_piece(position2[1], position2[0])
+    pos1 = quantum_list[index]
+    pos2 = quantum_list[index + 1]
 
-    # Add a new classic piece at the chosen position
-    create_piece(classic_position[1], classic_position[0], piece_color)
+    # Determine collapse outcome
+    n = 0 if is_determined else np.random.choice([0, 1])
+    if n == 0:
+        classic_pos, empty_pos = pos1, pos2
+    else:
+        classic_pos, empty_pos = pos2, pos1
 
-    # Update the game logic (GameRunner and BoardState)
-    ai_game.measure_quantum(classic_position, empty_position, classic_color)
+    # Remove visual representations of both quantum pieces
+    delete_piece(pos1[1], pos1[0])
+    delete_piece(pos2[1], pos2[0])
 
-    # Remove the pair of positions from quantum_pieces
-    quantum_pieces.pop(index + 1)
-    quantum_pieces.pop(index)
+    # Create a classic piece at the collapsed position
+    create_piece(classic_pos[1], classic_pos[0], piece_color)
+    board[classic_pos[0]][classic_pos[1]] = classic_color
 
-    print(f"Quantum piece collapsed: classic at {classic_position}, empty at {empty_position}")
-    # Switch to the AI's turn
-    Turn = "white" if Turn == "black" else "black"
-    Turn_Num += 1
-    ai_turn()
+    # Clear the other position
+    board[empty_pos[0]][empty_pos[1]] = 0
+
+    # Remove the pair from the quantum list
+    quantum_list.pop(index + 1)
+    quantum_list.pop(index)
+
+    # Collect positions for secondary collapses
+    secondary_collapse_positions = []
+    for pos in [pos1, pos2]:
+        if pos in black_quantum_pieces or pos in white_quantum_pieces:
+            secondary_collapse_positions.append(pos)
+
+    # Handle secondary collapses iteratively to avoid deep recursion
+    while secondary_collapse_positions:
+        next_pos = secondary_collapse_positions.pop()
+        collapse_quantum_piece(next_pos[0], next_pos[1], is_determined=True, advance_turn=False)
+
+    # Notify the game logic about the measurement
+    ai_game.measure_quantum(classic_pos, empty_pos, classic_color)
+
+    print(f"Quantum collapse resolved: Classic piece at {classic_pos}, empty at {empty_pos}.")
+
+    # Advance the turn and trigger AI move only after all collapses are resolved
+    if advance_turn:
+        Turn = "white" if Turn == "black" else "black"
+        print("black quantum pieces,", black_quantum_pieces)
+        print("white quantum pieces,", white_quantum_pieces)
+        print_board_state()
+        if check_winner():
+            Winner = Turn
+            s.create_text(width / 2, height / 2, text=f"{Turn.upper()} WINS!", font="Helvetica 20 bold", fill="red")
+            return
+        Turn_Num += 1
+        ai_turn()
+
 
 
 
