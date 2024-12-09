@@ -6,7 +6,8 @@
 Quantum Gomoku is a novel take on the classic Gomoku (Five-in-a-Row) game. It combines traditional gameplay with principles of quantum mechanics to introduce new layers of uncertainty and strategy. This project also integrates a custom-built AI for playing against human opponents or other AI agents.
 
 
-![image](https://github.com/user-attachments/assets/8803e254-c575-4aff-91e1-06947b7dbfa1)
+![image](https://github.com/user-attachments/assets/c5b2764d-b6a7-4dc3-9054-0ed6f67fd06e)
+
 
 
 ---
