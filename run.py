@@ -3,7 +3,9 @@ from time import *
 import sys
 import time
 import numpy as np
+import qiskit as qs
 from idna import check_initial_combiner
+
 
 myInterface = Tk()
 s = Canvas(myInterface, width=800, height=800, background= "#e8e0c8")
@@ -15,6 +17,29 @@ Frame_Gap = 35
 width = 500
 height = 500
 
+
+
+
+def create_circuit():
+    """
+    Creates a quantum circuit for the Bell state 1/sqrt(2) (|01> + |10>).
+
+    Returns:
+        QuantumCircuit: The quantum circuit generating the desired Bell state.
+    """
+    # Create a quantum circuit with 2 qubits
+    qc = qs.QuantumCircuit(2)
+
+    # Initialize qubit 0 to |1> (apply an X gate)
+    qc.x(0)
+
+    # Apply a Hadamard gate to qubit 0
+    qc.h(1)
+
+    # Apply a CNOT gate with qubit 0 as control and qubit 1 as target
+    qc.cx(0, 1)
+
+    return qc
 
 def create_circle(x, y, radius, fill = "", outline = "black", width = 1):
     c=s.create_oval(x - radius, y - radius, x + radius, y + radius, fill = fill, outline = outline, width = width)
