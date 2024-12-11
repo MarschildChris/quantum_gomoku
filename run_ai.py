@@ -401,10 +401,12 @@ def collapse_quantum_piece(y, x, is_determined=False, advance_turn=True):
         quantum_list = black_quantum_pieces
         piece_color = "black"
         classic_color = BLACK
+        other_color = "white"
     elif board[y][x] == QWHITE or (y, x) in white_quantum_pieces:
         quantum_list = white_quantum_pieces
         piece_color = "white"
         classic_color = WHITE
+        other_color = "black"
     else:
         print(f"No quantum piece to collapse at ({y}, {x}).")
         return
@@ -423,31 +425,47 @@ def collapse_quantum_piece(y, x, is_determined=False, advance_turn=True):
     pos1 = quantum_list[index]
     pos2 = quantum_list[p_index]
 
-    # Determine collapse outcome
-    collapse_to_pos1 = 1 if is_determined else np.random.choice([0, 1])
-    if collapse_to_pos1:
-        classic_pos, empty_pos = pos1, pos2
-    else:
-        classic_pos, empty_pos = pos2, pos1
-
-    # Remove visual representations of both quantum pieces
-    delete_piece(pos1[1], pos1[0])
-    delete_piece(pos2[1], pos2[0])
-
-    # Create the classic piece at the collapsed position
-    create_piece(classic_pos[1], classic_pos[0], piece_color)
-    board[classic_pos[0]][classic_pos[1]] = classic_color
-
-    # Clear the empty position
-    board[empty_pos[0]][empty_pos[1]] = EMPTY
+    print("white:", white_quantum_pieces)
+    print("black:", black_quantum_pieces)
 
     # Remove the pair from the quantum list
     quantum_list.remove(pos1)
     quantum_list.remove(pos2)
 
-    # Check for secondary collapses
-    if classic_pos in black_quantum_pieces or classic_pos in white_quantum_pieces:
-        collapse_quantum_piece(classic_pos[0], classic_pos[1], is_determined=True, advance_turn=False)
+
+
+    # Determine collapse outcome
+    n = 0 if is_determined else np.random.choice([0, 1])
+    if n:
+        classic_pos, empty_pos = pos1, pos2
+        delete_piece(pos1[1], pos1[0])
+        create_piece(pos1[1], pos1[0], piece_color)
+        board[pos1[0]][pos1[1]] = classic_color
+
+        delete_piece(pos2[1], pos2[0])
+        if board[pos2[0]][pos2[1]]==2*classic_color:
+            board[pos2[0]][pos2[1]] = EMPTY
+        else:
+            create_quantum_piece(pos2[1], pos2[0],other_color)
+            board[pos2[0]][pos2[1]] = -classic_color*2
+
+    else:
+        classic_pos, empty_pos = pos2, pos1
+
+        delete_piece(pos1[1], pos1[0])
+        board[pos1[0]][pos1[1]] = EMPTY
+
+        delete_piece(pos2[1], pos2[0])
+        if board[pos2[0]][pos2[1]] == 2*classic_color:
+            create_piece(pos2[1], pos2[0], piece_color)
+            board[pos2[0]][pos2[1]] = classic_color
+        else:
+            print("iterative!")
+            create_quantum_piece(pos2[1], pos2[0], other_color)
+            board[empty_pos[0]][empty_pos[1]] = -classic_color * 2
+            collapse_quantum_piece(pos2[0], pos2[1], is_determined=True, advance_turn=False)
+            create_piece(pos2[1], pos2[0], piece_color)
+            board[pos2[0]][pos2[1]] = classic_color
 
     # Notify game logic
     ai_game.measure_quantum(classic_pos, empty_pos, classic_color)
@@ -457,7 +475,8 @@ def collapse_quantum_piece(y, x, is_determined=False, advance_turn=True):
     # Advance turn if needed
     if advance_turn:
         Turn = "white" if Turn == "black" else "black"
-        print_board_state()
+        print("Q black pieces:",black_quantum_pieces)
+        print("Q white pieces:",white_quantum_pieces)
         if check_winner():
             Winner = Turn
             s.create_text(width / 2, height / 2, text=f"{Turn.upper()} WINS!", font="Helvetica 20 bold", fill="red")
